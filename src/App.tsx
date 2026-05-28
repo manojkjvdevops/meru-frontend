@@ -10,6 +10,7 @@ import {
 // --- PRODUCTION-READY DYNAMIC API ROUTING ANCHOR ---
 const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
+// --- DATA STRUCTURAL ENTITY INTERFACES ---
 interface DashboardMetrics {
   totalTeachers: number;
   activeTeachers: number;
@@ -46,9 +47,35 @@ interface Announcement {
   authorName: string;
 }
 
+interface StudentAttendanceRecord {
+  id?: number;
+  date: string;
+  status: 'PRESENT' | 'ABSENT' | 'LATE';
+  remarks: string;
+}
+
+interface StudentTransportDetails {
+  busNumber: string;
+  routeName: string;
+  driverName: string;
+  driverPhone: string;
+  latitude: number;
+  longitude: number;
+  lastUpdated: string;
+}
+
+interface StudentNutritionLog {
+  id?: number;
+  date: string;
+  mealType: string;
+  menuItems: string;
+  calories: number;
+  consumed: boolean;
+}
+
 type SystemRole = 'ADMIN' | 'TEACHER' | 'STUDENT';
 type ModalViewType = 'NONE' | 'CLASSES' | 'ASSIGNMENTS' | 'BADGES' | 'HOURS';
-type PortalSubView = 'DASHBOARD' | 'CLASSES' | 'RESOURCES' | 'ASSIGNMENTS' | 'VIDEOS' | 'LABS' | 'QUIZZES' | 'SKILLS' | 'ACHIEVEMENTS' | 'CALENDAR' | 'PROFILE';
+type PortalSubView = 'DASHBOARD' | 'CLASSES' | 'RESOURCES' | 'ASSIGNMENTS' | 'VIDEOS' | 'LABS' | 'QUIZZES' | 'SKILLS' | 'ACHIEVEMENTS' | 'CALENDAR' | 'PROFILE' | 'ATTENDANCE' | 'TRANSPORT' | 'NUTRITION';
 
 export default function App() {
   const [token, setToken] = useState<string | null>(localStorage.getItem('mgmt_portal_token'));
@@ -71,6 +98,12 @@ export default function App() {
   const [profile, setProfile] = useState<MissionProfile | null>(null);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
+
+  // New Extension Subsystem Hook States
+  const [attendanceHistory, setAttendanceHistory] = useState<StudentAttendanceRecord[]>([]);
+  const [transportInfo, setTransportInfo] = useState<StudentTransportDetails | null>(null);
+  const [nutritionHistory, setNutritionHistory] = useState<StudentNutritionLog[]>([]);
+  const [metricsLoading, setMetricsLoading] = useState<boolean>(false);
 
   // Modal State
   const [activeModal, setActiveModal] = useState<ModalViewType>('NONE');
@@ -135,6 +168,19 @@ export default function App() {
       .catch(err => console.error(err));
 
     const targetEmail = currentRole === 'TEACHER' ? selectedRosterStudent : (userEmail || '');
+
+    // --- CONSOLIDATED ADDITIONAL METRICS STREAM DISPATCHER ---
+    setMetricsLoading(true);
+    fetchFromSecureApi(`${BACKEND_URL}/api/v1/student/dashboard?email=${encodeURIComponent(targetEmail)}`)
+      .then(res => res.json())
+      .then(data => {
+        setAttendanceHistory(data.attendanceRecords || []);
+        setTransportInfo(data.transportDetails || null);
+        setNutritionHistory(data.nutritionLogs || []);
+      })
+      .catch(err => console.error("Error connecting to sub-module pipelines:", err))
+      .finally(() => setMetricsLoading(false));
+
     fetchFromSecureApi(`${BACKEND_URL}/api/v1/mission2040/profile?email=${targetEmail}`)
       .then(res => res.json())
       .then((data: MissionProfile) => {
@@ -305,6 +351,11 @@ export default function App() {
                   { view: 'CLASSES', label: 'My Classes', icon: BookOpen },
                   { view: 'RESOURCES', label: 'Class Resources', icon: FolderOpen },
                   { view: 'ASSIGNMENTS', label: 'Assignments', icon: ClipboardList },
+                  // --- NEW NAV SUB-VIEWS INJECTED HERE ---
+                  { view: 'ATTENDANCE', label: 'My Attendance Logs', icon: CheckCircle2 },
+                  { view: 'TRANSPORT', label: 'Live Bus & GPS Route', icon: MapPin },
+                  { view: 'NUTRITION', label: 'Canteen Nutrition Tracker', icon: Sparkles },
+                  // ----------------------------------------
                   { view: 'VIDEOS', label: 'Recorded Classes', icon: Video },
                   { view: 'LABS', label: 'Virtual Experiments', icon: Beaker },
                   { view: 'QUIZZES', label: 'Quizzes & Tests', icon: HelpCircle },
@@ -314,6 +365,8 @@ export default function App() {
                   { view: 'PROFILE', label: 'Profile', icon: User }
                 ].map((item) => {
                   const IconComponent = item.icon;
+                  // Restrict advanced sub-modules exclusively to student contextual profiles
+                  if (['ATTENDANCE', 'TRANSPORT', 'NUTRITION'].includes(item.view) && currentRole !== 'STUDENT') return null;
                   return (
                     <button 
                       key={item.view}
@@ -438,7 +491,7 @@ export default function App() {
                         <button onClick={() => setCurrentView('CLASSES')} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-2.5 rounded-xl border-none cursor-pointer tracking-wide transition shadow-md shadow-indigo-600/10">Go to My Classes</button>
                       </div>
 
-                      {/* TASK BACKLOGS LISTS */}
+                      {/* TEXT FIELD AND ACTIVITY LINK BUTTON BOX */}
                       <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-3 flex flex-col justify-between">
                         <div>
                           <div className="border-b pb-2 flex justify-between items-center mb-2"><h3 className="text-xs font-black text-slate-400 uppercase tracking-wider flex items-center gap-1"><FileText size={14} className="text-orange-500"/> Assigned Assignments</h3><span className="text-[10px] text-indigo-500 font-bold cursor-pointer" onClick={() => setCurrentView('ASSIGNMENTS')}>Manage All</span></div>
@@ -559,7 +612,7 @@ export default function App() {
                       </div>
                     </div>
 
-                    {/* AI COGNITIVE LOG BLOCKS OVERRIDES */}
+                    {/* text block overrides for ai */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white border border-slate-100 p-5 rounded-2xl shadow-sm">
                       <div className="col-span-2 text-xs font-black uppercase text-slate-400 tracking-wider flex items-center gap-1"><Sparkles size={14} className="text-indigo-600"/> AI Engine Analytical Text Modules Override</div>
                       <div>
@@ -580,7 +633,7 @@ export default function App() {
                       </div>
                     </div>
 
-                    {/* HUMAN REMARKS NOTES LOG BLOCK */}
+                    {/* Advisory guidance notes */}
                     <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm bg-gradient-to-r from-white to-slate-50/40">
                       <h3 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5"><MessageSquare size={14} className="text-blue-600"/> Educator Advisory Guidance Notes</h3>
                       {currentRole === 'TEACHER' ? (
@@ -669,9 +722,9 @@ export default function App() {
                 </div>
               )}
 
-              {/* ==================== SCREEN INTERFACE DEDICATED PAGES SUB-VIEWS ROUTERS ==================== */}
+              {/* ==================== SUB-VIEWS VIEWPORT CONDITIONAL ROUTERS ==================== */}
               {currentView === 'CLASSES' && (
-                <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm animate-fade-in space-y-4 shadow-sm">
+                <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm animate-fade-in space-y-4">
                   <div className="border-b pb-3 flex justify-between items-center"><h3 className="text-sm font-black text-indigo-950 flex items-center gap-2"><BookOpen className="text-indigo-600"/> My Classes Progress Management</h3></div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {[
@@ -690,7 +743,7 @@ export default function App() {
               )}
 
               {currentView === 'ASSIGNMENTS' && (
-                <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm animate-fade-in space-y-4 shadow-sm">
+                <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm animate-fade-in space-y-4">
                   <div className="border-b pb-3 flex justify-between items-center"><h3 className="text-sm font-black text-indigo-950 flex items-center gap-2"><ClipboardList className="text-indigo-600"/> Active Assignments Pipeline Allocation</h3><div className="flex items-center gap-2 text-xs font-bold text-slate-400"><span>Target Pending Tasks:</span><input type="number" value={tAssignments} onChange={(e) => setTAssignments(parseInt(e.target.value) || 0)} className="w-12 p-0.5 border text-center rounded focus:outline-none font-bold text-slate-800" /></div></div>
                   <div className="space-y-2.5">
                     {["Science Cell Structure Mapping Matrix", "Algorithmic Limit Analysis Validation Set", "Reflective Synthesis Essay: Core Sustainability"].map((item, i) => (
@@ -703,8 +756,87 @@ export default function App() {
                 </div>
               )}
 
+              {/* 1. 📅 ATTENDANCE SUB-VIEW */}
+              {currentView === 'ATTENDANCE' && (
+                <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm animate-fade-in space-y-4">
+                  <div className="border-b pb-3"><h3 className="text-sm font-black text-indigo-950 flex items-center gap-2"><CheckCircle2 className="text-indigo-600"/> Personal Attendance Log Ledger</h3></div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {attendanceHistory.length > 0 ? (
+                      attendanceHistory.map((item, idx) => (
+                        <div key={item.id || idx} className="p-4 bg-slate-50 border rounded-2xl flex justify-between items-center shadow-inner">
+                          <div>
+                            <h4 className="text-xs font-black text-slate-900">{item.date}</h4>
+                            <p className="text-[10px] text-slate-400 font-bold mt-1">{item.remarks || "Standard academic registration index log"}</p>
+                          </div>
+                          <span className={`text-[10px] px-3 py-1 rounded-xl font-bold border ${
+                            item.status === 'PRESENT' ? 'bg-green-50 text-green-700 border-green-200' :
+                            item.status === 'LATE' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : 'bg-red-50 text-red-700 border-red-200'
+                          }`}>{item.status}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-xs text-slate-400 p-4 col-span-2 text-center font-medium">No active entry history tracks synchronized from database engine.</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* 2. 🚌 TRANSPORT SUB-VIEW */}
+              {currentView === 'TRANSPORT' && (
+                <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm animate-fade-in space-y-4">
+                  <div className="border-b pb-3"><h3 className="text-sm font-black text-indigo-950 flex items-center gap-2"><MapPin className="text-indigo-600"/> Real-time Smart Logistics Fleet Telemetry</h3></div>
+                  {transportInfo ? (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="bg-slate-50 p-5 border rounded-2xl space-y-3 shadow-inner">
+                        <span className="text-[9px] bg-indigo-600 text-white font-black px-2 py-0.5 rounded-md uppercase tracking-wider">Bus Route Profiler</span>
+                        <h4 className="text-lg font-black text-slate-800 mt-2">{transportInfo.busNumber}</h4>
+                        <p className="text-xs font-semibold text-slate-500">{transportInfo.routeName}</p>
+                      </div>
+                      <div className="bg-slate-50 p-5 border rounded-2xl space-y-2 shadow-inner text-xs font-bold text-slate-700">
+                        <span className="text-[9px] bg-slate-200 text-slate-600 font-black px-2 py-0.5 rounded-md uppercase tracking-wider">Personnel Contacts</span>
+                        <p className="mt-3"><strong>Assigned Driver:</strong> {transportInfo.driverName}</p>
+                        <p><strong>Emergency Comm Base:</strong> {transportInfo.driverPhone}</p>
+                      </div>
+                      <div className="bg-slate-50 p-5 border border-dashed border-indigo-200 rounded-2xl flex flex-col items-center justify-center text-center shadow-inner">
+                        <span className="text-[10px] font-black text-indigo-600 tracking-wider uppercase flex items-center gap-1">📍 LIVE TELEMETRY ANCHOR</span>
+                        <div className="font-mono text-xs text-slate-800 bg-white border font-black px-3 py-1.5 rounded-xl shadow-sm my-2">{transportInfo.latitude}, {transportInfo.longitude}</div>
+                        <p className="text-[9px] text-slate-400 font-bold">Synchronized Ping: {new Date(transportInfo.lastUpdated).toLocaleTimeString()}</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-400 p-6 text-center font-medium">Your profile context is currently configured as a self-commuting entity.</p>
+                  )}
+                </div>
+              )}
+
+              {/* 3. 🍎 NUTRITION SUB-VIEW */}
+              {currentView === 'NUTRITION' && (
+                <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm animate-fade-in space-y-4">
+                  <div className="border-b pb-3"><h3 className="text-sm font-black text-indigo-950 flex items-center gap-2"><Sparkles className="text-indigo-600"/> Campus Canteen Caloric Management System</h3></div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {nutritionHistory.length > 0 ? (
+                      nutritionHistory.map((meal, index) => (
+                        <div key={index} className="p-4 bg-orange-50/40 border border-orange-100 rounded-2xl space-y-2 hover:shadow-inner transition">
+                          <div className="flex justify-between items-center">
+                            <span className="text-[9px] font-black uppercase bg-orange-200 text-orange-800 px-2 py-0.5 rounded">{meal.mealType}</span>
+                            <span className="text-[10px] font-bold text-slate-400">{meal.date}</span>
+                          </div>
+                          <h4 className="text-xs font-black text-slate-800">{meal.menuItems}</h4>
+                          <div className="text-[11px] font-bold text-slate-500 border-t pt-2 flex justify-between items-center">
+                            <span>Metabolic Intake:</span>
+                            <strong className="text-orange-700">{meal.calories} kcal</strong>
+                        </div>
+                    </div>
+                      ))
+                    ) : (
+                      <p className="text-xs text-slate-400 p-4 col-span-2 text-center font-medium">No dietary intake allocations loaded for this session context.</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {currentView === 'LABS' && (
-                <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm animate-fade-in space-y-4 shadow-sm">
+                <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm animate-fade-in space-y-4">
                   <h3 className="text-sm font-black text-indigo-950 flex items-center gap-2 border-b pb-3"><Beaker className="text-indigo-600"/> Sandbox Laboratories Status Overrides</h3>
                   <div className="space-y-3">
                     {[
@@ -722,7 +854,7 @@ export default function App() {
               )}
 
               {currentView === 'SKILLS' && (
-                <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm animate-fade-in space-y-4 shadow-sm">
+                <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm animate-fade-in space-y-4">
                   <h3 className="text-sm font-black text-indigo-950 flex items-center gap-2 border-b pb-3"><TrendingUp className="text-indigo-600"/> Skill Builder Core Sliders</h3>
                   <div className="space-y-4">
                     {[
@@ -739,9 +871,8 @@ export default function App() {
                 </div>
               )}
 
-              {/* HOLIDAY CALENDAR SYSTEM */}
               {currentView === 'CALENDAR' && (
-                <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm animate-fade-in space-y-5 shadow-sm">
+                <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm animate-fade-in space-y-5">
                   <div className="border-b pb-3"><h3 className="text-sm font-black text-indigo-950 flex items-center gap-2"><Calendar className="text-indigo-600"/> Academic Events & Holiday Track Calendar</h3></div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {[
@@ -760,7 +891,6 @@ export default function App() {
                 </div>
               )}
 
-              {/* SHARED CHANNELS ROUTING ARRAYS */}
               {['RESOURCES', 'VIDEOS', 'QUIZZES', 'ACHIEVEMENTS', 'PROFILE'].includes(currentView) && (
                 <div className="bg-white p-8 rounded-3xl border text-center text-xs font-semibold text-slate-400 shadow-sm animate-fade-in">
                   🍿 {currentView} Reference workspace stream online. Sub-views configurations can be easily tracked within student selection view templates.
