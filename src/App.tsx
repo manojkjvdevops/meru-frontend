@@ -351,7 +351,7 @@ export default function App() {
                   { view: 'CLASSES', label: 'My Classes', icon: BookOpen },
                   { view: 'RESOURCES', label: 'Class Resources', icon: FolderOpen },
                   { view: 'ASSIGNMENTS', label: 'Assignments', icon: ClipboardList },
-                  // --- NEW NAV SUB-VIEWS INJECTED HERE ---
+                  // --- NAV SUB-VIEWS INJECTED HERE ---
                   { view: 'ATTENDANCE', label: 'My Attendance Logs', icon: CheckCircle2 },
                   { view: 'TRANSPORT', label: 'Live Bus & GPS Route', icon: MapPin },
                   { view: 'NUTRITION', label: 'Canteen Nutrition Tracker', icon: Sparkles },
@@ -463,6 +463,82 @@ export default function App() {
                       })}
                     </div>
 
+                    {/* ==================== INTERACTIVE SUB-SYSTEM GRAPHICAL METRIC TILES ==================== */}
+                    {currentRole === 'STUDENT' && (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2 animate-fade-in">
+                        
+                        {/* 📅 ATTENDANCE QUICK TILE */}
+                        <div 
+                          onClick={() => setCurrentView('ATTENDANCE')}
+                          className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm cursor-pointer hover:shadow-md hover:border-indigo-200 transition group transform hover:-translate-y-0.5 flex flex-col justify-between"
+                        >
+                          <div className="flex justify-between items-start">
+                            <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600"><CheckCircle2 size={20} /></div>
+                            <span className="text-[9px] font-black bg-emerald-100/70 text-emerald-700 px-2 py-0.5 rounded-md uppercase tracking-wider">Live Status</span>
+                          </div>
+                          <div className="mt-4">
+                            <h3 className="text-xs font-black text-slate-800 leading-tight uppercase tracking-wide">Attendance Ledger</h3>
+                            <p className="text-[10px] text-slate-400 mt-1 font-medium">
+                              {attendanceHistory.length > 0 
+                                ? `Tracked ${attendanceHistory.length} core institutional registration logs this week.` 
+                                : "View current academic session attendance logs."}
+                            </p>
+                          </div>
+                          <div className="mt-4 pt-3 border-t border-slate-50 flex items-center justify-between text-[10px] font-bold text-indigo-600 group-hover:text-indigo-700">
+                            <span>Open Attendance Tracker</span>
+                            <ChevronRight size={14} className="transform group-hover:translate-x-0.5 transition-transform" />
+                          </div>
+                        </div>
+
+                        {/* 🚌 TRANSPORT QUICK TILE */}
+                        <div 
+                          onClick={() => setCurrentView('TRANSPORT')}
+                          className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm cursor-pointer hover:shadow-md hover:border-indigo-200 transition group transform hover:-translate-y-0.5 flex flex-col justify-between"
+                        >
+                          <div className="flex justify-between items-start">
+                            <div className="p-3 rounded-xl bg-blue-50 text-blue-600"><MapPin size={20} /></div>
+                            <span className="text-[9px] font-black bg-blue-100/70 text-blue-700 px-2 py-0.5 rounded-md uppercase tracking-wider">GPS Sync</span>
+                          </div>
+                          <div className="mt-4">
+                            <h3 className="text-xs font-black text-slate-800 leading-tight uppercase tracking-wide">Smart Transit Tracking</h3>
+                            <p className="text-[10px] text-slate-400 mt-1 font-medium">
+                              {transportInfo 
+                                ? `Fleet ID ${transportInfo.busNumber} assigned to active commute route.` 
+                                : "View assigned transit details and coordinates."}
+                            </p>
+                          </div>
+                          <div className="mt-4 pt-3 border-t border-slate-50 flex items-center justify-between text-[10px] font-bold text-indigo-600 group-hover:text-indigo-700">
+                            <span>Track Live Bus Route</span>
+                            <ChevronRight size={14} className="transform group-hover:translate-x-0.5 transition-transform" />
+                          </div>
+                        </div>
+
+                        {/* 🍎 NUTRITION QUICK TILE */}
+                        <div 
+                          onClick={() => setCurrentView('NUTRITION')}
+                          className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm cursor-pointer hover:shadow-md hover:border-indigo-200 transition group transform hover:-translate-y-0.5 flex flex-col justify-between"
+                        >
+                          <div className="flex justify-between items-start">
+                            <div className="p-3 rounded-xl bg-amber-50 text-amber-600"><Sparkles size={20} /></div>
+                            <span className="text-[9px] font-black bg-amber-100/70 text-amber-700 px-2 py-0.5 rounded-md uppercase tracking-wider">Diet Log</span>
+                          </div>
+                          <div className="mt-4">
+                            <h3 className="text-xs font-black text-slate-800 leading-tight uppercase tracking-wide">Nutrition Metrics</h3>
+                            <p className="text-[10px] text-slate-400 mt-1 font-medium">
+                              {nutritionHistory.length > 0 
+                                ? `Registered ${nutritionHistory.length} campus canteen meals recorded today.` 
+                                : "Monitor daily metric logs and dietary analysis parameters."}
+                            </p>
+                          </div>
+                          <div className="mt-4 pt-3 border-t border-slate-50 flex items-center justify-between text-[10px] font-bold text-indigo-600 group-hover:text-indigo-700">
+                            <span>Open Nutrition Portal</span>
+                            <ChevronRight size={14} className="transform group-hover:translate-x-0.5 transition-transform" />
+                          </div>
+                        </div>
+
+                      </div>
+                    )}
+
                     {/* ROW 1: MY CLASSES & ASSIGNED ASSIGNMENTS BLOCK CORES */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       
@@ -491,7 +567,7 @@ export default function App() {
                         <button onClick={() => setCurrentView('CLASSES')} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-2.5 rounded-xl border-none cursor-pointer tracking-wide transition shadow-md shadow-indigo-600/10">Go to My Classes</button>
                       </div>
 
-                      {/* TEXT FIELD AND ACTIVITY LINK BUTTON BOX */}
+                      {/* TASK BACKLOGS LISTS */}
                       <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-3 flex flex-col justify-between">
                         <div>
                           <div className="border-b pb-2 flex justify-between items-center mb-2"><h3 className="text-xs font-black text-slate-400 uppercase tracking-wider flex items-center gap-1"><FileText size={14} className="text-orange-500"/> Assigned Assignments</h3><span className="text-[10px] text-indigo-500 font-bold cursor-pointer" onClick={() => setCurrentView('ASSIGNMENTS')}>Manage All</span></div>
@@ -612,7 +688,7 @@ export default function App() {
                       </div>
                     </div>
 
-                    {/* text block overrides for ai */}
+                    {/* AI COGNITIVE LOG BLOCKS OVERRIDES */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white border border-slate-100 p-5 rounded-2xl shadow-sm">
                       <div className="col-span-2 text-xs font-black uppercase text-slate-400 tracking-wider flex items-center gap-1"><Sparkles size={14} className="text-indigo-600"/> AI Engine Analytical Text Modules Override</div>
                       <div>
@@ -633,7 +709,7 @@ export default function App() {
                       </div>
                     </div>
 
-                    {/* Advisory guidance notes */}
+                    {/* HUMAN REMARKS NOTES LOG BLOCK */}
                     <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm bg-gradient-to-r from-white to-slate-50/40">
                       <h3 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5"><MessageSquare size={14} className="text-blue-600"/> Educator Advisory Guidance Notes</h3>
                       {currentRole === 'TEACHER' ? (
@@ -722,7 +798,7 @@ export default function App() {
                 </div>
               )}
 
-              {/* ==================== SUB-VIEWS VIEWPORT CONDITIONAL ROUTERS ==================== */}
+              {/* ==================== SCREEN INTERFACE DEDICATED PAGES SUB-VIEWS ROUTERS ==================== */}
               {currentView === 'CLASSES' && (
                 <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm animate-fade-in space-y-4">
                   <div className="border-b pb-3 flex justify-between items-center"><h3 className="text-sm font-black text-indigo-950 flex items-center gap-2"><BookOpen className="text-indigo-600"/> My Classes Progress Management</h3></div>
@@ -756,7 +832,7 @@ export default function App() {
                 </div>
               )}
 
-              {/* 1. 📅 ATTENDANCE SUB-VIEW */}
+              {/* 1. 📅 ATTENDANCE JOURNAL VIEWPORT SUB-VIEW */}
               {currentView === 'ATTENDANCE' && (
                 <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm animate-fade-in space-y-4">
                   <div className="border-b pb-3"><h3 className="text-sm font-black text-indigo-950 flex items-center gap-2"><CheckCircle2 className="text-indigo-600"/> Personal Attendance Log Ledger</h3></div>
@@ -781,7 +857,7 @@ export default function App() {
                 </div>
               )}
 
-              {/* 2. 🚌 TRANSPORT SUB-VIEW */}
+              {/* 2. 🚌 TRANSPORT SUPERVISOR VIEWPORT SUB-VIEW */}
               {currentView === 'TRANSPORT' && (
                 <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm animate-fade-in space-y-4">
                   <div className="border-b pb-3"><h3 className="text-sm font-black text-indigo-950 flex items-center gap-2"><MapPin className="text-indigo-600"/> Real-time Smart Logistics Fleet Telemetry</h3></div>
@@ -809,7 +885,7 @@ export default function App() {
                 </div>
               )}
 
-              {/* 3. 🍎 NUTRITION SUB-VIEW */}
+              {/* 3. 🍎 NUTRITION LOG ANALYSIS VIEWPORT SUB-VIEW */}
               {currentView === 'NUTRITION' && (
                 <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm animate-fade-in space-y-4">
                   <div className="border-b pb-3"><h3 className="text-sm font-black text-indigo-950 flex items-center gap-2"><Sparkles className="text-indigo-600"/> Campus Canteen Caloric Management System</h3></div>
@@ -825,8 +901,8 @@ export default function App() {
                           <div className="text-[11px] font-bold text-slate-500 border-t pt-2 flex justify-between items-center">
                             <span>Metabolic Intake:</span>
                             <strong className="text-orange-700">{meal.calories} kcal</strong>
+                          </div>
                         </div>
-                    </div>
                       ))
                     ) : (
                       <p className="text-xs text-slate-400 p-4 col-span-2 text-center font-medium">No dietary intake allocations loaded for this session context.</p>
